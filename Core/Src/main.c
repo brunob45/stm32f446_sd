@@ -93,6 +93,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    HAL_Delay(500);
+    if (!HAL_GPIO_ReadPin(USER_KEY_GPIO_Port, USER_KEY_Pin))
+    {
+      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
