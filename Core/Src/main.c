@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,7 +65,8 @@ static void MX_GPIO_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+  uint8_t print_buf[] = "Hello, world!\n";
+  size_t print_len = sizeof(print_buf);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -98,6 +99,7 @@ int main(void)
     HAL_Delay(500);
     if (!HAL_GPIO_ReadPin(USER_KEY_GPIO_Port, USER_KEY_Pin))
     {
+      CDC_Transmit_FS(print_buf, print_len);
       HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
     }
     /* USER CODE END WHILE */
