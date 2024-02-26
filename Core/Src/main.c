@@ -182,6 +182,12 @@ static void MX_CAN1_Init(void)
 {
 
   /* USER CODE BEGIN CAN1_Init 0 */
+  // Freq   Prescaler TimeSeg1  TimeSeg2
+  //  125      15       15        8
+  //  250       9       13        6
+  //  500       5       11        6
+  // 1000       3        9        5
+  // CAN clk @ 45MHz
 
   /* USER CODE END CAN1_Init 0 */
 
