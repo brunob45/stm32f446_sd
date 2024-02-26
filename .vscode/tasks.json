@@ -10,6 +10,12 @@
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "label": "Download",
+      "type": "shell",
+      "command": "STM32_Programmer_CLI.exe -c port=usb1 -d ./build/debug/build/stm32f446_sd.elf 0x08000000",
+      "problemMatcher": []
     }
   ]
 }
