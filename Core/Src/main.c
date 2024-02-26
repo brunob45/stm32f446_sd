@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2024 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2024 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -44,8 +44,8 @@
 CAN_HandleTypeDef hcan1;
 
 /* USER CODE BEGIN PV */
-uint8_t print_buf[] = "Hello, world!\n";
-size_t print_len = sizeof(print_buf);
+uint8_t print_buf[128];
+size_t print_len;
 
 /* USER CODE END PV */
 
@@ -72,6 +72,10 @@ int main(void)
   CAN_TxHeaderTypeDef txheader;
   uint8_t txdata[8];
   uint32_t txmb;
+  CAN_RxHeaderTypeDef rxheader;
+  uint8_t rxdata[8];
+
+  uint32_t last_tx = HAL_GetTick();
 
   /* USER CODE END 1 */
 
@@ -107,11 +111,34 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    HAL_Delay(500);
-    if (!HAL_GPIO_ReadPin(USER_KEY_GPIO_Port, USER_KEY_Pin))
+    if ((HAL_GetTick() - last_tx) > 1000)
     {
-      HAL_CAN_AddTxMessage(&hcan1, &txheader, txdata, &txmb);
-      HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+      if (!HAL_GPIO_ReadPin(USER_KEY_GPIO_Port, USER_KEY_Pin))
+      {
+        last_tx = HAL_GetTick();
+        if (HAL_CAN_AddTxMessage(&hcan1, &txheader, txdata, &txmb) != HAL_OK)
+        {
+          print_len = sprintf(print_buf, "Tx Error: %d\n", HAL_CAN_GetError(&hcan1))
+          CDC_Transmit_FS(print_buf, print_len);
+          HAL_CAN_ResetError(&hcan1);
+        }
+      }
+    }
+
+    if (HAL_CAN_GetRxFifoFillLevel(&hcan1, 0) > 0)
+    {
+      if (HAL_CAN_GetRxMessage(&hcan1, 0, &rxheader, rxdata) == HAL_OK)
+      {
+        print_len = sprintf(print_buf, "Receive: 0x%X\n", (rxheader.IDE == CAN_ID_STD) ? rxheader.StdId : rxheader.ExtId);
+        CDC_Transmit_FS(print_buf, print_len);
+        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+      }
+      else
+      {
+        print_len = sprintf(print_buf, "Rx Error: %d\n", HAL_CAN_GetError(&hcan1))
+        CDC_Transmit_FS(print_buf, print_len);
+        HAL_CAN_ResetError(&hcan1);
+      }
     }
     /* USER CODE END WHILE */
 
@@ -254,10 +281,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-  CDC_Transmit_FS(print_buf, print_len);
-}
+
 /* USER CODE END 4 */
 
 /**
