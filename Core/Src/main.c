@@ -47,6 +47,13 @@ DMA_HandleTypeDef hdma_sdio_rx;
 DMA_HandleTypeDef hdma_sdio_tx;
 
 /* USER CODE BEGIN PV */
+static uint8_t print_buf[100];
+static size_t print_len = 0;
+
+FRESULT res;                                  /* FatFs function common result code */
+uint32_t byteswritten, bytesread;             /* File write/read counts */
+uint8_t wtext[] = "STM32 FATFS works great!"; /* File write buffer */
+uint8_t rtext[_MAX_SS];                       /* File read buffer */
 
 /* USER CODE END PV */
 
@@ -72,8 +79,7 @@ static void MX_SDIO_SD_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  uint8_t print_buf[] = "Hello, world!\n";
-  size_t print_len = sizeof(print_buf);
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -103,6 +109,45 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
+  HAL_Delay(5000);
+
+  res = f_mkfs((TCHAR const *)SDPath, FM_ANY, 0, rtext, sizeof(rtext));
+  if (res != FR_OK)
+  {
+    print_len = sprintf(print_buf, "Error mkfs %d", res);
+    CDC_Transmit_FS(print_buf, print_len);
+    Error_Handler();
+  }
+
+  res = f_mount(&SDFatFS, (TCHAR const *)SDPath, 0);
+  if (res != FR_OK)
+  {
+    print_len = sprintf(print_buf, "Error mount %d", res);
+    CDC_Transmit_FS(print_buf, print_len);
+    Error_Handler();
+  }
+
+  // Open file for writing (Create)
+  res = f_open(&SDFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE);
+  if (res != FR_OK)
+  {
+    print_len = sprintf(print_buf, "Error open %d", res);
+    CDC_Transmit_FS(print_buf, print_len);
+    Error_Handler();
+  }
+
+  // Write to the text file
+  res = f_write(&SDFile, wtext, strlen((char *)wtext), (void *)&byteswritten);
+  if ((byteswritten == 0) || (res != FR_OK))
+  {
+    print_len = sprintf(print_buf, "Error write %d", res);
+    CDC_Transmit_FS(print_buf, print_len);
+    Error_Handler();
+  }
+
+  f_close(&SDFile);
+  f_mount(&SDFatFS, (TCHAR const *)NULL, 0);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -112,7 +157,6 @@ int main(void)
     HAL_Delay(500);
     if (!HAL_GPIO_ReadPin(USER_KEY_GPIO_Port, USER_KEY_Pin))
     {
-      CDC_Transmit_FS(print_buf, print_len);
       HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
     }
     /* USER CODE END WHILE */
@@ -220,9 +264,9 @@ static void MX_SDIO_SD_Init(void)
   hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
   hsd.Init.BusWide = SDIO_BUS_WIDE_4B;
   hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd.Init.ClockDiv = 0;
+  hsd.Init.ClockDiv = 3;
   /* USER CODE BEGIN SDIO_Init 2 */
-
+  hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
   /* USER CODE END SDIO_Init 2 */
 
 }
