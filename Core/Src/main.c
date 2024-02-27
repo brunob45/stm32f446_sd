@@ -101,7 +101,27 @@ int main(void)
   MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
 
+  txheader.IDE = CAN_ID_EXT;
+  txheader.ExtId = 0x0CFEE400;
+  txheader.DLC = 8;
+  txheader.RTR = CAN_RTR_DATA;
+
+  for(int i = 0; i < 7; i++)
+  {
+    txdata[i] = 0xFF;
+  }
+
   CAN_FilterTypeDef canfilter;
+  canfilter.FilterIdHigh = 0;
+  canfilter.FilterIdLow = 0;
+  canfilter.FilterMaskIdHigh = 0;
+  canfilter.FilterMaskIdLow = 0;
+  canfilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  canfilter.FilterBank = 18;
+  canfilter.FilterMode = CAN_FILTERMODE_IDMASK;
+  canfilter.FilterScale = CAN_FILTERSCALE_32BIT;
+  canfilter.FilterActivation = CAN_FILTER_ENABLE;
+  canfilter.SlaveStartFilterBank = 20;
   HAL_CAN_ConfigFilter(&hcan1, &canfilter);
   HAL_CAN_Start(&hcan1);
 
@@ -118,7 +138,7 @@ int main(void)
         last_tx = HAL_GetTick();
         if (HAL_CAN_AddTxMessage(&hcan1, &txheader, txdata, &txmb) != HAL_OK)
         {
-          print_len = sprintf(print_buf, "Tx Error: %d\n", HAL_CAN_GetError(&hcan1))
+          print_len = sprintf(print_buf, "Tx Error: %d\n", HAL_CAN_GetError(&hcan1));
           CDC_Transmit_FS(print_buf, print_len);
           HAL_CAN_ResetError(&hcan1);
         }
@@ -135,7 +155,7 @@ int main(void)
       }
       else
       {
-        print_len = sprintf(print_buf, "Rx Error: %d\n", HAL_CAN_GetError(&hcan1))
+        print_len = sprintf(print_buf, "Rx Error: %d\n", HAL_CAN_GetError(&hcan1));
         CDC_Transmit_FS(print_buf, print_len);
         HAL_CAN_ResetError(&hcan1);
       }
